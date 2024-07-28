@@ -1,0 +1,80 @@
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.operators.ssh_operator import SSHOperator
+from airflow.utils.dates import days_ago
+from airflow.utils.trigger_rule import TriggerRule
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': days_ago(1),
+}
+
+dag = DAG(
+    'ssh_operator_example',
+    default_args=default_args,
+    schedule_interval=None,
+)
+
+# Task 1: SSH to a server and run a command
+task_1 = SSHOperator(
+    task_id='task_1',
+    ssh_conn_id='your_ssh_connection_id',
+    command='echo "Task 1 executed"',
+    dag=dag,
+)
+
+# Task 2: SSH to a server, connect to DB, and fetch the count
+def fetch_count():
+    import paramiko
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname='your_host', username='your_user', key_filename='path_to_your_pem_file')
+    stdin, stdout, stderr = ssh.exec_command('your_db_query_command')
+    count = int(stdout.read().strip())
+    ssh.close()
+    return count
+
+task_2 = PythonOperator(
+    task_id='task_2',
+    python_callable=fetch_count,
+    dag=dag,
+)
+
+# Task 3: SSH to a server and run a command
+task_3 = SSHOperator(
+    task_id='task_3',
+    ssh_conn_id='your_ssh_connection_id',
+    command='echo "Task 3 executed"',
+    dag=dag,
+)
+
+# Task 4: SSH to a server and run a command
+task_4 = SSHOperator(
+    task_id='task_4',
+    ssh_conn_id='your_ssh_connection_id',
+    command='echo "Task 4 executed"',
+    dag=dag,
+)
+
+# Branching logic based on the count fetched in task_2
+def branch_task(**kwargs):
+    ti = kwargs['ti']
+    count = ti.xcom_pull(task_ids='task_2')
+    if count == 1:
+        return 'task_3'
+    elif count == 2:
+        return ['task_3', 'task_4']
+    else:
+        return 'task_4'
+
+branch = PythonOperator(
+    task_id='branch_task',
+    python_callable=branch_task,
+    provide_context=True,
+    dag=dag,
+)
+
+# Setting up the task dependencies
+task_1 >> task_2 >> branch
+branch >> task_3
+branch >> task_4
