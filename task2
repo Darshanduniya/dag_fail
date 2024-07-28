@@ -1,3 +1,6 @@
+from airflow.operators.python import BranchPythonOperator
+from airflow.operators.empty import EmptyOperator
+
 task_1 = SSHOperator(
         task_id='task_1',
         ssh_conn_id='your_ssh_connection',
