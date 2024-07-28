@@ -1,0 +1,51 @@
+task_1 = SSHOperator(
+        task_id='task_1',
+        ssh_conn_id='your_ssh_connection',
+        command='echo "Task 1 execution"',
+    )
+
+    task_2 = SSHOperator(
+        task_id='task_2',
+        ssh_conn_id='your_ssh_connection',
+        command='echo "Task 2 execution"',
+    )
+
+    task_3 = BranchPythonOperator(
+        task_id='task_3',
+        python_callable=choose_branch,
+        provide_context=True,
+    )
+
+    task_4 = SSHOperator(
+        task_id='task_4',
+        ssh_conn_id='your_ssh_connection',
+        command='echo "Task 4 execution"',
+    )
+
+    task_5 = SSHOperator(
+        task_id='task_5',
+        ssh_conn_id='your_ssh_connection',
+        command='echo "Task 5 execution"',
+    )
+
+    task_6 = SSHOperator(
+        task_id='task_6',
+        ssh_conn_id='your_ssh_connection',
+        command='echo "Task 6 execution"',
+    )
+
+    task_7 = EmptyOperator(
+        task_id='task_7',
+    )
+
+    end = SSHOperator(
+        task_id='end',
+        ssh_conn_id='your_ssh_connection',
+        command='echo "End of DAG"',
+    )
+
+    task_1 >> task_2 >> task_3
+    task_3 >> task_4 >> task_5 >> task_6 >> task_7
+    task_3 >> task_4 >> task_7
+    task_3 >> task_4 >> task_5 >> task_7
+    task_7 >> end
